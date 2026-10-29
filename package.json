@@ -1,0 +1,13 @@
+{
+  "name": "mi-sitio",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler pages dev . --port 8788"
+  },
+  "dependencies": {
+    "postgres": "3.4.5"
+  },
+  "devDependencies": {
+    "wrangler": "4.42.0"
+  }
+}

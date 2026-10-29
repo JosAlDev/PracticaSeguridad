@@ -12,6 +12,56 @@
         <a href="acerca.html">Acerca</a>
     </nav>
     <h1>Catálogo</h1>
-    <p>Aquí mostraremos los datos de la tabla de juegos más adelante.</p>
+    <p>Juegos guardados en la tabla <code>juegos</code> de Supabase, ordenados por calificación.</p>
+
+    <p id="estado">Cargando juegos…</p>
+    <table id="tabla" hidden>
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Género</th>
+                <th>Año</th>
+                <th>Rating</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        // Los datos los entrega functions/api/juegos.js, que se conecta a Supabase con el connection string.
+        const estado = document.getElementById('estado');
+        const tabla = document.getElementById('tabla');
+
+        async function cargarJuegos() {
+            let data;
+            try {
+                const respuesta = await fetch('/api/juegos');
+                data = await respuesta.json();
+                if (!respuesta.ok) throw new Error(data.error);
+            } catch (error) {
+                estado.textContent = 'No se pudieron cargar los juegos: ' + error.message;
+                return;
+            }
+            if (data.length === 0) {
+                estado.textContent = 'La tabla juegos está vacía.';
+                return;
+            }
+
+            const cuerpo = tabla.querySelector('tbody');
+            for (const juego of data) {
+                const fila = document.createElement('tr');
+                for (const valor of [juego.titulo, juego.genero, juego.anio, juego.rating]) {
+                    const celda = document.createElement('td');
+                    celda.textContent = valor ?? '';
+                    fila.appendChild(celda);
+                }
+                cuerpo.appendChild(fila);
+            }
+            estado.hidden = true;
+            tabla.hidden = false;
+        }
+
+        cargarJuegos();
+    </script>
 </body>
 </html>

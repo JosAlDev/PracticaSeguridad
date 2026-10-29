@@ -1,0 +1,2 @@
+# Copia este archivo como .dev.vars y pon tu connection string (Transaction pooler de Supabase)
+DATABASE_URL=postgresql://postgres.TU-PROYECTO:TU-CONTRASEÑA@aws-0-REGION.pooler.supabase.com:6543/postgres

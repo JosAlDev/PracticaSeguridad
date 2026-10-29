@@ -1,3 +1,7 @@
 body{font-family:Arial,sans-serif; max-width:760px; margin:40px auto; padding:0 16px; color:#13201B;}
 nav a{color:#1F6A54; text-decoration:none; font-weight:bold;}
 h1{color:#1F6A54;}
+table{width:100%; border-collapse:collapse; margin-top:16px;}
+th,td{padding:8px 10px; border-bottom:1px solid #D5E3DD; text-align:left;}
+th{background:#1F6A54; color:#fff;}
+tbody tr:nth-child(even){background:#F1F7F4;}
