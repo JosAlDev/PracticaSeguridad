@@ -11,7 +11,137 @@
         <a href="catalogo.html">Catálogo</a> ·
         <a href="acerca.html">Acerca</a>
     </nav>
-    <h1>Mi primer sitio web</h1>
-    <p>Hola, soy Josue Alvarez. Esta es mi página de inicio.</p>
+    <h1>Portal de solicitudes</h1>
+    <p>Hola, soy Josue Alvarez. Aquí puedes registrar y consultar solicitudes.</p>
+
+    <!-- Solo se muestra con sesión; sin sesión se redirige a inicio.html -->
+    <section id="app" hidden>
+        <p class="sesion">
+            Sesión iniciada como <strong id="usuario"></strong>
+            <button class="secundario" onclick="salir()">Cerrar sesión</button>
+        </p>
+
+        <h2>Nueva solicitud</h2>
+        <label>Título <input id="titulo" type="text" maxlength="120" placeholder="Compra de material"></label>
+        <label>Monto <input id="monto" type="number" min="0" step="0.01" placeholder="0.00"></label>
+        <div class="botones">
+            <button onclick="crearSolicitud()">Guardar solicitud</button>
+        </div>
+        <p id="m2" class="msg"></p>
+
+        <h2>Solicitudes</h2>
+        <p id="estado">Cargando solicitudes…</p>
+        <table id="tabla" hidden>
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Monto</th>
+                    <th>Creada por</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script>
+        const val = (id) => document.getElementById(id).value.trim();
+
+        function msg(id, texto, ok) {
+            const p = document.getElementById(id);
+            p.textContent = texto;
+            p.className = 'msg ' + (ok ? 'ok' : 'error');
+        }
+
+        // El registro y el inicio de sesión están en inicio.html
+
+        // Paso 5: cerrar sesión y volver a la pantalla de inicio de sesión
+        async function salir() {
+            await supabase.auth.signOut();
+            mostrarLogin();
+        }
+
+        async function mostrarApp() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return mostrarLogin();
+            document.getElementById('usuario').textContent = user.email;
+            document.getElementById('app').hidden = false;
+            cargarSolicitudes();
+        }
+
+        function mostrarLogin() {
+            location.replace('inicio.html');
+        }
+
+        // Paso 4: cada solicitud guarda el correo de quien la crea
+        async function crearSolicitud() {
+            const titulo = val('titulo');
+            const monto = Number(val('monto'));
+            if (!titulo) return msg('m2', 'Escribe un título.', false);
+            if (val('monto') === '' || !(monto >= 0)) return msg('m2', 'Escribe un monto válido.', false);
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return mostrarLogin();
+
+            const { error } = await supabase.from('solicitudes').insert({ titulo, monto, usuario_email: user.email });
+            if (error) return msg('m2', 'Error: ' + error.message, false);
+
+            msg('m2', 'Solicitud guardada.', true);
+            document.getElementById('titulo').value = '';
+            document.getElementById('monto').value = '';
+            cargarSolicitudes();
+        }
+
+        async function cargarSolicitudes() {
+            const estado = document.getElementById('estado');
+            const tabla = document.getElementById('tabla');
+            const { data, error } = await supabase
+                .from('solicitudes')
+                .select('titulo, monto, usuario_email, creada')
+                .order('creada', { ascending: false });
+
+            if (error) {
+                estado.textContent = 'No se pudieron cargar las solicitudes: ' + error.message;
+                estado.hidden = false;
+                tabla.hidden = true;
+                return;
+            }
+            if (data.length === 0) {
+                estado.textContent = 'Todavía no hay solicitudes.';
+                estado.hidden = false;
+                tabla.hidden = true;
+                return;
+            }
+
+            const cuerpo = tabla.querySelector('tbody');
+            cuerpo.replaceChildren();
+            for (const s of data) {
+                const fila = document.createElement('tr');
+                const valores = [
+                    s.titulo,
+                    '$' + Number(s.monto).toFixed(2),
+                    s.usuario_email ?? '',
+                    new Date(s.creada).toLocaleString('es-MX')
+                ];
+                for (const valor of valores) {
+                    const celda = document.createElement('td');
+                    celda.textContent = valor;
+                    fila.appendChild(celda);
+                }
+                cuerpo.appendChild(fila);
+            }
+            estado.hidden = true;
+            tabla.hidden = false;
+        }
+
+        // Paso 4: al cargar la página, con sesión se entra directo; sin sesión, a iniciar sesión
+        (async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) mostrarApp();
+            else mostrarLogin();
+        })();
+    </script>
 </body>
 </html>

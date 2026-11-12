@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Inicio de sesión</title>
+    <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+    <nav>
+        <a href="index.html">Inicio</a> ·
+        <a href="catalogo.html">Catálogo</a> ·
+        <a href="acerca.html">Acerca</a>
+    </nav>
+    <h1>Inicio de sesión</h1>
+    <p>Entra con tu cuenta para usar el Portal de solicitudes. Si no tienes una, créala aquí mismo.</p>
+
+    <section id="login">
+        <label>Correo <input id="email" type="email" autocomplete="email" placeholder="alumno@ejemplo.com"></label>
+        <label>Contraseña <input id="pass" type="password" autocomplete="current-password" placeholder="Mínimo 6 caracteres"></label>
+        <div class="botones">
+            <button onclick="entrar()">Iniciar sesión</button>
+            <button class="secundario" onclick="registrar()">Crear cuenta</button>
+        </div>
+        <p id="m1" class="msg"></p>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script>
+        const val = (id) => document.getElementById(id).value.trim();
+
+        function msg(id, texto, ok) {
+            const p = document.getElementById(id);
+            p.textContent = texto;
+            p.className = 'msg ' + (ok ? 'ok' : 'error');
+        }
+
+        // Sin correo, Supabase toma signUp() como inicio de sesión anónimo ("Anonymous sign-ins are disabled")
+        function faltanDatos() {
+            if (!val('email') || !val('pass')) {
+                msg('m1', 'Escribe tu correo y tu contraseña.', false);
+                return true;
+            }
+            return false;
+        }
+
+        // Registro e inicio de sesión con Supabase Auth (las contraseñas las guarda cifradas Supabase)
+        async function registrar() {
+            if (faltanDatos()) return;
+            const { error } = await supabase.auth.signUp({ email: val('email'), password: val('pass') });
+            if (error) return msg('m1', 'Error: ' + error.message, false);
+            msg('m1', 'Cuenta creada. Ya puedes iniciar sesión.', true);
+        }
+
+        async function entrar() {
+            if (faltanDatos()) return;
+            const { error } = await supabase.auth.signInWithPassword({ email: val('email'), password: val('pass') });
+            if (error?.code === 'email_not_confirmed') return msg('m1', 'Falta confirmar el correo de esta cuenta.', false);
+            if (error) return msg('m1', 'Credenciales incorrectas', false);
+            location.href = 'index.html';
+        }
+
+        // Si ya hay sesión, no hace falta volver a entrar: pasa directo al Portal
+        (async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) location.replace('index.html');
+        })();
+    </script>
+</body>
+</html>
